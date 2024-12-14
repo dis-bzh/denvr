@@ -1,0 +1,4 @@
+[denvr]
+%{ for index, ip in public_ips ~}
+${ip} index=${index}
+%{ endfor ~}

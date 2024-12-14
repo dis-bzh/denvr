@@ -1,0 +1,55 @@
+---
+- name: denvr
+  hosts: all
+  become: true
+  tasks:
+    # Installer Docker sur la VM distante
+    - name: Installer Docker
+      apt:
+        name: docker
+        state: present
+        update_cache: yes
+
+    - name: Create build directory
+      file:
+        path: /home/vde/demo-dockerfile
+        state: directory
+        owner: vde
+        group: vde
+        mode: '0755'
+
+    - name: Copy Dockerfile
+      copy:
+        src: ../Dockerfile
+        dest: /home/vde/demo-dockerfile/Dockerfile
+        owner: root
+        group: root
+        mode: '0644'
+
+    # - name: Build container image
+    #   community.docker.docker_image:
+    #     name: my-app:latest
+    #     build:
+    #       path: /home/vde/demo-dockerfile
+    #     source: build
+    #     state: present
+
+    # # Démarrer un conteneur avec l'image Docker
+    # - name: Lancer le conteneur Docker
+    #   community.docker.docker_container:
+    #     name: my-app
+    #     image: my-app:latest
+    #     state: started
+    #     ports:
+    #       - "5000:5000"
+    #     volumes:
+    #       - /data
+
+    # Démarrer un conteneur avec l'image Docker
+    - name: Lancer le conteneur Docker
+      community.docker.docker_container:
+        name: welcome
+        image: docker/welcome-to-docker
+        state: started
+        ports:
+          - "8080:80"

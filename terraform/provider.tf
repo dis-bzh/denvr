@@ -10,5 +10,5 @@ terraform {
 
 provider "warren" {
     api_url = "https://api.denv-r.com/v1"
-#    api_token = "xxx"
+   api_token = "${var.api_token}"
 }

@@ -1,14 +1,14 @@
 # Utiliser une image de base
-FROM python:3.9-slim
+FROM python:3.10-slim
 
 # Définir le répertoire de travail
-WORKDIR /app
+# WORKDIR /app
 
 # Copier les fichiers dans l'image
 COPY . /app
 
 # Installer les dépendances
-RUN pip install -r requirements.txt
+# RUN pip install -r requirements.txt
 
 # Exposer le port de l'application
 EXPOSE 5000

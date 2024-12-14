@@ -46,4 +46,9 @@ roles/
     webtier/              # same kind of structure as "common" was above, done for the webtier role
     monitoring/           # ""
     fooapp/               # ""
+### Project configuration file
+ansible.cfg.example
 
+## Terraform
+### variables
+terraform.tfvars.example

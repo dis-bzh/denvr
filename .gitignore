@@ -1,0 +1,12 @@
+# Ansible
+ansible.cfg
+
+# Terraform
+terraform/.terraform
+.terraform*
+terraform.tfvars
+terraform.tfplan
+terraform.tfstate*
+
+# shared
+inventory

@@ -1,0 +1,24 @@
+- hosts: all
+  become: true
+  tasks:
+    - name: Installer Docker
+      apt:
+        name: docker.io
+        state: present
+        update_cache: yes
+
+    - name: Copier l'image Docker sur la machine distante
+      copy:
+        src: ./my-app.tar
+        dest: /tmp/my-app.tar
+
+    - name: Charger l'image Docker sur la machine distante
+      command: docker load < /tmp/my-app.tar
+
+    - name: Lancer le conteneur Docker
+      docker_container:
+        name: my-app
+        image: my-app:latest
+        state: started
+        ports:
+          - "5000:5000"

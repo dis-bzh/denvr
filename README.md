@@ -1,7 +1,20 @@
-#
+# Denv-r template project
+
+This project is a template to :
+
+- test, build and push a contenerized node app in Github registry
+- managed VMs in Denv-r cloud environment and deploy the previous contenerized app on it/them.
+
+## Github workflow
+
+Template for testing node app then build it using Docker and push it in Github registry.
 
 ## Ansible
+
+Template to manage VMs configuration. It uses the inventory created by Terraform.
+
 ### Content organisation
+
 https://docs.ansible.com/ansible/2.9/user_guide/playbooks_best_practices.html#content-organization
 
 production                # inventory file for production servers
@@ -46,9 +59,21 @@ roles/
     webtier/              # same kind of structure as "common" was above, done for the webtier role
     monitoring/           # ""
     fooapp/               # ""
+
 ### Project configuration file
-ansible.cfg.example
+
+Copy and edit the ansible configuration file example with the inventory path, your SSH private key file path corresponding to the public part used in Terraform and the user on deployed VMs.
+
+```bash
+cp ansible.cfg.example ansible.cfg
+```
 
 ## Terraform
+
 ### variables
-terraform.tfvars.example
+
+```bash
+cp terraform.tfvars.example teraform.tfars
+```
+and edit it
+

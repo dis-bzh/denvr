@@ -5,7 +5,7 @@ ansible.cfg
 terraform/.terraform
 .terraform*
 terraform.tfvars
-terraform.tfplan
+*plan*
 terraform.tfstate*
 
 # shared

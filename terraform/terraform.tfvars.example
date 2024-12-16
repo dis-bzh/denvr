@@ -1,5 +1,5 @@
 
-api_key= ""
+api_token = ""
 vm_prefix = ""
 ssh_public_key = ""
 username = ""

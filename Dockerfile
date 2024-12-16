@@ -1,17 +1,14 @@
-# Utiliser une image de base
-FROM python:3.10-slim
+FROM node:lts-alpine as build
+RUN apk update && apk upgrade
+WORKDIR /app
+COPY package*.json ./
+RUN npm install -g npm
+RUN npm install
+COPY . ./
+RUN npm run build
 
-# Définir le répertoire de travail
-# WORKDIR /app
-
-# Copier les fichiers dans l'image
-COPY . /app
-
-# Installer les dépendances
-# RUN pip install -r requirements.txt
-
-# Exposer le port de l'application
-EXPOSE 5000
-
-# Commande pour démarrer l'application
-CMD ["python", "app.py"]
+FROM nginx:stable-alpine-slim
+RUN apk update && apk upgrade
+COPY --from=build /app/build /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

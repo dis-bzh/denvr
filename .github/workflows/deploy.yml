@@ -1,0 +1,55 @@
+name: Deploy with Ansible
+
+on:
+  push:
+    tags:
+      - '*'
+  workflow_run:
+    workflows: ["Build and Publish Docker image"]
+    types: 
+      - completed
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy Ansible Playbook
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set output
+        id: vars
+        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+
+      - name: Check output
+        env:
+          RELEASE_VERSION: ${{ steps.vars.outputs.tag }}
+        run: |
+          echo $RELEASE_VERSION
+          echo ${{ steps.vars.outputs.tag }}
+      
+      - name: Set up SSH
+        run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > private_key.pem
+          chmod 600 private_key.pem       
+
+      - name: Install Ansible
+        shell: bash
+        run: |
+          sudo apt update
+          sudo apt install -y ansible
+
+      - name: Run Ansible Playbook
+        env:
+          ANSIBLE_USER: ${{ secrets.ANSIBLE_USER }}
+          ANSIBLE_HOST_KEY_CHECKING: False
+        run: |
+          ansible-playbook -i terraform/inventory anssible/playbook.yml \
+            --private-key private_key.pem \
+            -u ${{ secrets.ANSIBLE_USER }} \
+            --ssh-common-args='-o StrictHostKeyChecking=no' \
+            --extra-vars ansible_user=${{ secrets.ANSIBLE_USER }}
+            --extra-vars registry_username=${{ github.repository_owner }} \
+            --extra-vars registry_token=${{ secrets.GITHUB_TOKEN }} \
+            --extra-vars image_name=ghcr.io/${{ github.repository }}:${{ steps.vars.outputs.tag }}

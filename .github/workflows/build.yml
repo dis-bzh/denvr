@@ -8,14 +8,14 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
+      - name: Move to nextjs directory
+        run: cp nextjs
       - uses: actions/checkout@v4
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: 'npm'
-      - name: Move to nextjs directory
-        run: cp nextjs
       - name: Install dependencies
         run: npm ci
       - name: Run tests

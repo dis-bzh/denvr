@@ -1,14 +1,25 @@
-FROM node:lts-alpine as build
-RUN apk update && apk upgrade
+# Stage 1: install dependencies
+FROM node:lts-alpine AS deps
 WORKDIR /app
-COPY package*.json ./
-RUN npm install -g npm
+COPY ./nextjs/package*.json .
+ARG NODE_ENV
+ENV NODE_ENV $NODE_ENV
 RUN npm install
-COPY . ./
+
+# Stage 2: build
+FROM node:lts-alpine AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY ./nextjs/src ./src
+COPY ./nextjs/public ./public
+COPY ./nextjs/package.json ./nextjs/next.config.ts ./
 RUN npm run build
 
-FROM nginx:stable-alpine-slim
-RUN apk update && apk upgrade
-COPY --from=build /app/build /usr/share/nginx/html
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+# Stage 3: run
+FROM node:lts-alpine
+WORKDIR /app
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./
+CMD ["npm", "run", "start"]

@@ -13,12 +13,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          node-version-file: 'nextjs/package.json'
+          cache-dependency-path: nextjs/package-lock.json
           cache: 'npm'
       - name: Install dependencies
         run: npm ci
+        working-directory: './nextjs'
       - name: Run tests
         run: npm test
+        working-directory: './nextjs'
 
   version:
     runs-on: ubuntu-latest

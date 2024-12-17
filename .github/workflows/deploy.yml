@@ -11,14 +11,15 @@ on:
   workflow_dispatch:
     inputs:
       is_manual:
-        required: true
-        type: string
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   deploy:
     name: Deploy Ansible Playbook
     runs-on: ubuntu-latest
-    if: (startsWith(github.ref, 'refs/tags/v') || ${{ inputs.is_manual }})
+    if: (startsWith(github.ref, 'refs/tags/v') || ${{ github.event.inputs.is_manual }})
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -54,7 +55,7 @@ jobs:
             --private-key private_key.pem \
             -u ${{ secrets.ANSIBLE_USER }} \
             --ssh-common-args='-o StrictHostKeyChecking=no' \
-            --extra-vars ansible_user=${{ secrets.ANSIBLE_USER }}
+            --extra-vars ansible_user=${{ secrets.ANSIBLE_USER }} \
             --extra-vars registry_username=${{ github.repository_owner }} \
             --extra-vars registry_token=${{ secrets.GITHUB_TOKEN }} \
             --extra-vars image_name=ghcr.io/${{ github.repository }}:${{ steps.vars.outputs.tag }}

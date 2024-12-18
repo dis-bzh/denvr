@@ -48,3 +48,8 @@ variable "disk_size" {
   description = "Number of RAM for the instances"
   type        = number
 }
+
+variable "network_name" {
+  description = "Name of the network to connect created VMs"
+  type        = string
+}

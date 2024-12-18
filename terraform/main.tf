@@ -1,6 +1,6 @@
 
 data "warren_network" "public" {
-  name = "backend"
+  name = "${var.network_name}"
 }
 
 # Resources managed by Terraform

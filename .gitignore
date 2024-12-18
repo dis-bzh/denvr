@@ -1,3 +1,5 @@
+.env
+
 # Ansible
 ansible.cfg
 
@@ -9,4 +11,4 @@ terraform.tfvars
 terraform.tfstate*
 
 # shared
-#inventory
+inventory

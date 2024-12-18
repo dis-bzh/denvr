@@ -11,4 +11,4 @@ terraform.tfvars
 terraform.tfstate*
 
 # shared
-inventory
+terraform/inventory

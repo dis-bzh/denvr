@@ -1,4 +1,4 @@
-name: workflow for Maven using Snyk security scan
+name: workflow for Node using Snyk security scan
 
 on: push
 
@@ -9,7 +9,7 @@ jobs:
       - uses: actions/checkout@master
 
       - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/maven@master
+        uses: snyk/actions/node@master
         continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}

@@ -13,3 +13,5 @@ jobs:
         continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+            args: --workdir=/github/workspace/my-app

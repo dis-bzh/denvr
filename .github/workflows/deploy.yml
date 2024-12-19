@@ -1,9 +1,6 @@
 name: Deploy with Ansible
 
 on:
-  push:
-    tags:
-      - '*'
   workflow_run:
     workflows: ["Build and Publish Docker image"]
     types: 

@@ -9,8 +9,24 @@
 
 This project is a template to :
 
-- test, build and push a contenerized node app in Github registry
-- managed VMs in Denv-r cloud environment and deploy the previous contenerized app on it/them.
+- build and push a contenerized NextJS app in Github registry
+- managed VMs in Denv-r cloud environment using Terraform*
+- deploy the previous contenerized app on it/them using Ansible
+
+> [!NOTE]
+> This Terraform project is just for Denv-r cloud env using the Warren provider
+> But, you still can use the CI and Ansible to build, publish and deploy your NextJS app in your VMs. You just need to create an inventory with their IP address (The VMs must be available through SSH)
+
+## Prerequisites
+
+Using the CI/CD only, to build, push and deploy, you just need to install :
+- Terraform
+
+If you want to run all this actions locally first then you need :
+- npm : build and run locally the NextJS application following the README.md file on "my-app" sub-directory
+- Docker with docker compose : build and run contenerized version of the app
+- Terraform : deploy VMs in your Denv-r cloud environment
+- Ansible : deploy the contenerized app on your VMs
 
 ## Github workflow
 
@@ -27,8 +43,9 @@ Secrets :
 ## Ansible
 
 Template to manage VMs configuration. It uses the inventory created by Terraform.
+It can be run locally, automatically triggered in the CI when "Build and Push" workflow is "completed", manually in the CI.
 
-The playbook runs from Github actions but you can execute it using :
+To run it locally, use the following command :
 ```bash
 ansible-playbook -i path/to/inventory path/to/playbook.yml \
 --private-key path/to/sshPrivateKey \
@@ -41,6 +58,9 @@ ansible-playbook -i path/to/inventory path/to/playbook.yml \
 ```
 
 ## Terraform
+
+Terraform is not integrated in the CI for now
+The Terraform S3 backend seems to not be compatible with warren/Denv-r cloud
 
 ### variables
 

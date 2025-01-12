@@ -12,3 +12,6 @@ terraform.tfstate*
 
 # shared
 terraform/inventory
+
+# docs
+**/_pycache_/

@@ -1,0 +1,6 @@
+bucket = "my-s3-tf"
+key = "terraform-state"
+region = "nte01"
+endpoints = {
+    s3 = "https://s3.denv-r.com",
+}

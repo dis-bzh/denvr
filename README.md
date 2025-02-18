@@ -59,21 +59,49 @@ ansible-playbook -i path/to/inventory path/to/playbook.yml \
 
 ## Terraform
 
-Terraform is not integrated in the CI for now
-The Terraform S3 backend seems to not be compatible with warren/Denv-r cloud
+Terraform is not integrated in the CI for now.
+To create and manage compute and storage resources like Virtual Machines using Terraform you must register a new API token at your [user interface](https://app.denv-r.com/)
+
+### S3 backend
+
+The Terraform State (tfstate) should be considered as a secret and its very important to keep it safe.
+Using an S3 backend is one of the best practice option (avoid using static file in production).
+
+You can create an S3 bucket from the UI or calling the API according to [the Denv-r API documentation](https://api.denv-r.com/#create-bucket).
+
+```bash
+curl --location --request PUT "https://api.denv-r.com/v1/storage/bucket" \
+    -H "apikey: meowmeowmeow" \
+    -d "name=pang1" \
+    -d "billing_account_id=12345"
+```
+
+Then retrieve (or generate) `accessKey` and `secretKey`
+
+```bash
+curl "https://api.denv-r.com/v1/storage/user/keys" \
+    -H "apikey: meowmeowmeow" \
+    -X GET
+```
 
 ### variables
 
+backend.tfvars file contains S3 backend configuration, as backend is loading first.
+terraform.tfvars file contains the details of your infrastructure like the networks, the number of Vms, the resources you will allocate to them, ...
+
 ```bash
-cp terraform.tfvars.example teraform.tfars
+cp backend.tfvars.example backend.tfars
+cp terraform.tfvars.example terraform.tfars
 ```
 
-edit it then retrieve your Denv-r API Token and execute :
+To create and manage your infrastructure, just provide the Denv-r API Token, S3 access key and S3 secret key then execute the commands below.
 
 ```bash
-export TF_VAR_api_token = xxx
+export TF_VAR_api_token="xxx"
+export AWS_SECRET_ACCESS_KEY="xxx"
+export AWS_ACCESS_KEY_ID="xxx"
 
-terraform init
+terraform init -backend-config=backend.tfvars
 terraform plan -out tf.plan
 terraform apply "tf.plan"
 ```

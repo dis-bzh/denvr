@@ -1,9 +1,12 @@
 
-data "warren_network" "public" {
+# Resources managed by Terraform
+
+# Network
+resource "warren_network" "public" {
   name = "${var.network_name}"
 }
 
-# Resources managed by Terraform
+# VMs
 resource "warren_virtual_machine" "denvr_vm" {
     count = "${var.vm_number}"
     disk_size_in_gb = "${var.disk_size}"
@@ -13,11 +16,12 @@ resource "warren_virtual_machine" "denvr_vm" {
     os_name         = "${var.os_name}"
     os_version      = "${var.os_version}"
     vcpu            = "${var.cpu_number}"
-    network_uuid = data.warren_network.public.id
-    reserve_public_ip = false
+    network_uuid = resource.warren_network.public.id
+    reserve_public_ip = false # if true, we can't retrieve the IP with Terraform
     public_key = "${var.ssh_public_key}"
 }
 
+# IPs associated to VMs
 resource "warren_floating_ip" "denvr_ip" {
   count = "${var.vm_number}"
   name = "ip-${var.vm_prefix}-${count.index}"

@@ -8,7 +8,7 @@ terraform/.terraform
 .terraform*
 terraform.tfvars
 *plan*
-terraform.tfstate*
+*tfstate*
 
 # shared
 terraform/inventory

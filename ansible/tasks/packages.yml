@@ -9,6 +9,12 @@
     name: docker
     state: present
 
+- name: Adding user {{ ansible_user }} to docker group 
+  ansible.builtin.user: 
+    name: {{ ansible_user }}
+    groups: docker
+    append: yes
+
 - name: Install fail2ban
   ansible.builtin.apt:
     name: fail2ban

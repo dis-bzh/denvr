@@ -4,11 +4,17 @@
     path: /home/{{ ansible_user }}/app
     state: directory
     mode: '0770'
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
+    become: true
 
 - name: docker-compose.yml is present
   ansible.builtin.template:
     src: templates/docker-compose.yml.j2
     dest: app/docker-compose.yml
+    mode: '0660'
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
 
 - name: App is present
   community.docker.docker_compose_v2:

@@ -1,19 +1,21 @@
 ---
 - name: denvr
   hosts: all
-  become: true
   tasks:  
     - name: Include task list in play
       ansible.builtin.include_tasks:
         file: tasks/packages.yml
+        become: true
 
     - name: Include task list in play
       ansible.builtin.include_tasks:
         file: tasks/ufw.yml
+        become: true
 
     - name: Include task list in play
       ansible.builtin.include_tasks:
         file: tasks/fail2ban.yml
+        become: true
 
     - name: Include task list in play
       ansible.builtin.include_tasks:
@@ -24,3 +26,4 @@
       service:
         name: fail2ban
         state: restarted
+        become: true

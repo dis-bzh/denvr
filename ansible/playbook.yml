@@ -5,17 +5,17 @@
     - name: Include task list in play
       ansible.builtin.include_tasks:
         file: tasks/packages.yml
-        become: true
+      become: true
 
     - name: Include task list in play
       ansible.builtin.include_tasks:
         file: tasks/ufw.yml
-        become: true
+      become: true
 
     - name: Include task list in play
       ansible.builtin.include_tasks:
         file: tasks/fail2ban.yml
-        become: true
+      become: true
 
     - name: Include task list in play
       ansible.builtin.include_tasks:
@@ -26,4 +26,4 @@
       service:
         name: fail2ban
         state: restarted
-        become: true
+      become: true

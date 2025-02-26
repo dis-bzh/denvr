@@ -6,7 +6,6 @@
     mode: '0770'
     owner: '{{ ansible_user }}'
     group: '{{ ansible_user }}'
-    become: true
 
 - name: docker-compose.yml is present
   ansible.builtin.template:

@@ -3,22 +3,22 @@
   hosts: all
   tasks:  
     - name: Include task list in play
-      ansible.builtin.include_tasks:
+      ansible.builtin.import_tasks:
         file: tasks/packages.yml
       become: true
 
     - name: Include task list in play
-      ansible.builtin.include_tasks:
+      ansible.builtin.import_tasks:
         file: tasks/ufw.yml
       become: true
 
     - name: Include task list in play
-      ansible.builtin.include_tasks:
+      ansible.builtin.import_tasks:
         file: tasks/fail2ban.yml
       become: true
 
     - name: Include task list in play
-      ansible.builtin.include_tasks:
+      ansible.builtin.import_tasks:
         file: tasks/deploy_app.yml
 
   handlers:

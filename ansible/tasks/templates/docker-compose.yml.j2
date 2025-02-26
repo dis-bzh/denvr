@@ -1,0 +1,12 @@
+
+services:
+  app:
+    image: {{ image_name | default("nginx") }}
+    ports:
+      - '{{ host_port | default("80") }}:{{ container_port | default("80") }}'
+    networks:
+      - net
+    restart: unless-stopped
+
+networks:
+  net:

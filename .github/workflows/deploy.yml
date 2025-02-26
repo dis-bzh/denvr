@@ -7,34 +7,173 @@ on:
       - completed
   workflow_dispatch:
 
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+  TF_VAR_api_token: ${{ secrets.API_TOKEN }}
+
 jobs:
-  deploy:
-    name: Deploy Ansible Playbook
+  terraform-plan:
+    name: Terraform - init and plan
     runs-on: ubuntu-latest
+    outputs:
+      inventory_artifact: terraform_plan
+
     steps:
-      - name: Checkout repository
+      - name: Checkout du dépôt
         uses: actions/checkout@v4
-
-      - name: Set output
-        id: vars
-        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
-
-      - name: Check output
-        env:
-          RELEASE_VERSION: ${{ steps.vars.outputs.tag }}
-        run: |
-          echo $RELEASE_VERSION
-          echo ${{ steps.vars.outputs.tag }}
       
-      - name: Set up SSH
-        run: |
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > private_key.pem
-          chmod 600 private_key.pem       
+      - name: Installation de Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.10.5"  # adaptez la version si besoin
 
-      - name: Install Ansible
+      - name: Substitution des placeholders dans backend.tfvars et terraform.tfvars
+        env:
+          S3_NAME: ${{vars.S3_BUCKET}}
+          S3_KEY: ${{vars.S3_KEY}}
+          S3_REGION: ${{vars.S3_REGION}}
+          S3_ENDPOINT_URL: ${{vars.S3_ENDPOINT_URL}}
+        run: |
+          cd terraform
+          # Vous pouvez préparer vos templates backend.tfvars et terraform.tfvars avec des placeholders,
+          # par exemple backend.template.tfvars et terraform.template.tfvars
+          envsubst < backend.tfvars.example > backend.tfvars
+      
+      - name: Terraform Init
+        run: |
+          cd terraform
+          terraform init -backend-config=backend.tfvars
+
+      - name: Create Artifact Folder 
         shell: bash
         run: |
-          sudo apt update
+          sudo mkdir -p -m777 ${{ github.workspace }}/tfplanoutput
+
+      - name: Terraform plan
+        run: |
+          cd terraform
+          terraform plan -out=${{ github.workspace }}/tfplanoutput/tf.plan
+      
+      - name: Upload de l'inventaire (artefact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform_plan
+          path: ${{ github.workspace }}/tfplanoutput/
+          if-no-files-found: error
+
+
+  manual-approval-tf:
+    name: Manual Approval TF
+    runs-on: ubuntu-latest
+    needs: terraform-plan
+    if: success() # Only proceed if terraform-plan job succeeds
+    steps:
+      - name: Await Manual Approval
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ github.TOKEN }}
+          approvers: vde-dis
+          minimum-approvals: 1
+          issue-title: "Manual Approval Required for Terraform Apply"
+          issue-body: "Please approve or deny the deployment."
+
+
+  terraform-apply:
+    name: Terraform - apply
+    runs-on: ubuntu-latest
+    needs: manual-approval-tf
+    steps:
+      - name: Checkout du dépôt
+        uses: actions/checkout@v4
+      
+      - name: Installation de Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.10.5"  # adaptez la version si besoin
+      
+      - name: Substitution des placeholders dans backend.tfvars et terraform.tfvars
+        env:
+          S3_NAME: ${{vars.S3_BUCKET}}
+          S3_KEY: ${{vars.S3_KEY}}
+          S3_REGION: ${{vars.S3_REGION}}
+          S3_ENDPOINT_URL: ${{vars.S3_ENDPOINT_URL}}
+        run: |
+          cd terraform
+          # Vous pouvez préparer vos templates backend.tfvars et terraform.tfvars avec des placeholders,
+          # par exemple backend.template.tfvars et terraform.template.tfvars
+          envsubst < backend.tfvars.example > backend.tfvars
+    
+      - name: Terraform Init
+        run: |
+          cd terraform
+          terraform init -backend-config=backend.tfvars
+
+      - name: Download de l'inventaire (artefact)
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform_plan
+          path: ${{ github.workspace }}/terraform/tfplanoutput
+
+      - name: Terraform Apply
+        run: |
+          cd terraform
+          terraform apply "tfplanoutput/tf.plan"
+      
+      - name: Vérifier la présence de l'inventaire
+        run: |
+          cd terraform
+          if [ -f "${PWD}/inventory" ]; then
+            echo "L'inventaire a été généré : ${PWD}/inventory"
+          else
+            echo "Erreur : fichier inventory non trouvé"
+            exit 1
+          fi
+      
+      - name: Upload de l'inventaire (artefact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform_inventory
+          path: terraform/inventory
+
+                  
+  manual-approval-ansible:
+    name: Manual Approval
+    runs-on: ubuntu-latest
+    steps:
+      - name: Await Manual Approval Ansible
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ github.TOKEN }}
+          approvers: vde-dis
+          minimum-approvals: 1
+          issue-title: "Manual Approval Required for Ansible"
+          issue-body: "Please approve or deny the deployment."
+
+  ansible:
+    name: Exécuter Ansible
+    runs-on: ubuntu-latest
+    needs: manual-approval-ansible
+    steps:
+      - name: Checkout du dépôt
+        uses: actions/checkout@v4
+      
+      - name: Télécharger l'inventaire généré par Terraform
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform_inventory
+          path: inventory
+
+      - name: Préparer la clé privée pour Ansible
+        run: |
+          cat << EOF > private_key.pem
+          ${{ secrets.SSH_PRIVATE_KEY }}
+          EOF
+          chmod 600 private_key.pem
+      
+      - name: Installation d'Ansible
+        run: |
+          # sudo apt update && sudo apt upgrade
           sudo apt install -y ansible
 
       - name: Run Ansible Playbook
@@ -42,7 +181,7 @@ jobs:
           ANSIBLE_USER: ${{ secrets.ANSIBLE_USER }}
           ANSIBLE_HOST_KEY_CHECKING: False
         run: |
-          ansible-playbook -i terraform/inventory ansible/playbook.yml \
+          ansible-playbook -i inventory ansible/playbook.yml \
             --private-key private_key.pem \
             -u ${{ secrets.ANSIBLE_USER }} \
             --ssh-common-args='-o StrictHostKeyChecking=no' \

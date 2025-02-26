@@ -1,6 +1,6 @@
-bucket = "my-s3-tf"
-key = "terraform-state"
-region = "nte01"
+bucket = "$S3_NAME"
+key = "$S3_KEY"
+region = "$S3_REGION"
 endpoints = {
-    s3 = "https://s3.denv-r.com",
+    s3 = "$S3_ENDPOINT_URL",
 }

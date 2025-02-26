@@ -2,42 +2,19 @@
 - name: denvr
   hosts: all
   become: true
-  tasks:
-    
-    - name: Update & upgrade
-      ansible.builtin.apt:
-        upgrade: yes
-        update_cache: yes
+  tasks:  
+    - name: Include task list in play
+      ansible.builtin.include_tasks:
+        file: tasks/packages.yml
 
-    - name: Docker is present
-      ansible.builtin.apt:
-        name: docker
-        state: present
-        update_cache: yes
+    - name: Include task list in play
+      ansible.builtin.include_tasks:
+        file: tasks/ufw.yml
 
-    - name: Log into registry 
-      community.docker.docker_login:
-        registry_url: ghcr.io
-        username: '{{ registry_username }}'
-        password: '{{ registry_token }}'
-    
-    - name: Create a directory if it does not exist
-      ansible.builtin.file:
-        path: /home/{{ ansible_user }}/app
-        state: directory
-        mode: '0770'
+    - name: Include task list in play
+      ansible.builtin.include_tasks:
+        file: tasks/fail2ban.yml
 
-    - name: docker-compose.yml is present
-      ansible.builtin.template:
-        src: templates/docker-compose.yml.j2
-        dest: app/docker-compose.yml
-
-    - name: App is present
-      community.docker.docker_compose_v2:
-        project_src: app
-        state: present
-      register: output
-
-    - name: Show results
-      ansible.builtin.debug:
-        var: output
+    - name: Include task list in play
+      ansible.builtin.include_tasks:
+        file: tasks/deploy_app.yml

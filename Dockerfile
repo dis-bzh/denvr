@@ -13,12 +13,15 @@ COPY ./my-app/ .
 COPY --from=deps /app/node_modules ./node_modules
 RUN npm run build
 
-# Stage 3: run
-FROM node:22-alpine
+FROM nginx:stable-alpine-slim
+RUN apk update && apk upgrade
+COPY --from=builder --chown=nginx:nginx /app/out /usr/share/nginx/html
 WORKDIR /app
-COPY --chown=node:node --from=builder /app/.next ./.next
-COPY --chown=node:node --from=builder /app/public ./public
-COPY --chown=node:node --from=builder /app/node_modules ./node_modules
-COPY --chown=node:node --from=builder /app/package.json ./
-USER node
-CMD ["npm", "run", "start"]
+RUN chown -R nginx:nginx /var/cache/nginx && \
+        chown -R nginx:nginx /var/log/nginx && \
+        chown -R nginx:nginx /etc/nginx/conf.d
+RUN touch /var/run/nginx.pid && \
+chown -R nginx:nginx /var/run/nginx.pid
+USER nginx
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

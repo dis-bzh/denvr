@@ -55,6 +55,8 @@ ansible-playbook -i path/to/inventory path/to/playbook.yml \
 --extra-vars registry_username=github_username \
 --extra-vars registry_token=github_access_token \
 --extra-vars image_name=containerImage:tag
+--extra-vars host_port=80
+--extra-vars container_port=80
 ```
 
 ## Terraform
@@ -98,8 +100,7 @@ To create and manage your infrastructure, just provide the Denv-r API Token, S3 
 
 ```bash
 export TF_VAR_api_token="xxx"
-export AWS_SECRET_ACCESS_KEY="xxx"
-export AWS_ACCESS_KEY_ID="xxx"
+# $env:TF_VAR_api_token="xxx" in Powershell
 
 terraform init -backend-config=backend.tfvars
 terraform plan -out tf.plan

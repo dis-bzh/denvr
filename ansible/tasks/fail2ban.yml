@@ -1,0 +1,16 @@
+---
+- name: Start fail2ban service
+  service:
+    name: fail2ban
+    state: started
+
+- name: Enable fail2ban service
+  service:
+    name: fail2ban
+    enabled: true
+
+- name: Set fail2ban local config
+  ansible.builtin.copy:
+    src: fail2ban/jail.local
+    dest: /etc/fail2ban/jail.local
+  notify: Restart fail2ban service

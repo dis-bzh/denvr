@@ -18,3 +18,9 @@
     - name: Include task list in play
       ansible.builtin.include_tasks:
         file: tasks/deploy_app.yml
+
+  handlers:
+    - name: Restart fail2ban service
+      service:
+        name: fail2ban
+        state: restarted

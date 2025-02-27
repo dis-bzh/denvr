@@ -17,9 +17,9 @@
         file: tasks/fail2ban.yml
       become: true
 
-    - name: Include task list in play
-      ansible.builtin.import_tasks:
-        file: tasks/deploy_app.yml
+    # - name: Include task list in play
+    #   ansible.builtin.import_tasks:
+    #     file: tasks/deploy_app.yml
 
   handlers:
     - name: Restart fail2ban service

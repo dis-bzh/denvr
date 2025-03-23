@@ -13,6 +13,19 @@ env:
   TF_VAR_api_token: ${{ secrets.API_TOKEN }}
 
 jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.gettag.outputs.tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get tag
+        id: gettag
+        run: |
+          echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+
   terraform-plan:
     name: Terraform - init and plan
     runs-on: ubuntu-latest
@@ -153,7 +166,7 @@ jobs:
   ansible:
     name: Exécuter Ansible
     runs-on: ubuntu-latest
-    needs: manual-approval-ansible
+    needs: [manual-approval-ansible, version]
     steps:
       - name: Checkout du dépôt
         uses: actions/checkout@v4
@@ -188,4 +201,4 @@ jobs:
             --extra-vars ansible_user=${{ secrets.ANSIBLE_USER }} \
             --extra-vars registry_username=${{ github.repository_owner }} \
             --extra-vars registry_token=${{ secrets.GITHUB_TOKEN }} \
-            --extra-vars image_name=ghcr.io/${{ github.repository }}:${{ steps.vars.outputs.tag }}
+            --extra-vars image_name=ghcr.io/${{ github.repository }}:${{ needs.version.outputs.version }}

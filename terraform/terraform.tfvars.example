@@ -1,11 +1,23 @@
 
-vm_prefix = ""
+prefix = ""
 ssh_public_key = ""
 username = ""
 os_name = ""
 os_version = ""
-vm_number = ""
-cpu_number = ""
-ram_number = ""
-disk_size = ""
-network_name = ""
+
+vms = [
+    {
+        name = ""
+        cpu_number = ""
+        ram_number = ""
+        disk_size = ""
+        network = ""
+    },
+    {
+        name = ""
+        cpu_number = ""
+        ram_number = ""
+        disk_size = ""
+        network = ""
+    }
+]

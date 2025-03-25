@@ -4,8 +4,8 @@ variable "api_token" {
   type        = string
 }
 
-variable "vm_prefix" {
-  description = "Prefix for VM name"
+variable "prefix" {
+  description = "Prefix for VMs name"
   default     = "denvr"
 }
 
@@ -29,27 +29,38 @@ variable "os_version" {
   type        = string
 }
 
-variable "vm_number" {
-  description = "Number of instances to manage"
-  type        = number
+# variable "vm_number" {
+#   description = "Number of instances to manage"
+#   type        = number
+# }
+
+# variable "cpu_number" {
+#   description = "Number of vCPU for the instances"
+#   type        = number
+# }
+
+# variable "ram_number" {
+#   description = "Number of RAM for the instances"
+#   type        = number
+# }
+
+# variable "disk_size" {
+#   description = "Number of RAM for the instances"
+#   type        = number
+# }
+
+variable "vms" {
+  description = "Details of VMs"
+  type        = list(object({
+    name = string
+    cpu_number = number
+    ram_number = number
+    disk_size = number
+    network = string
+  }))
 }
 
-variable "cpu_number" {
-  description = "Number of vCPU for the instances"
-  type        = number
-}
-
-variable "ram_number" {
-  description = "Number of RAM for the instances"
-  type        = number
-}
-
-variable "disk_size" {
-  description = "Number of RAM for the instances"
-  type        = number
-}
-
-variable "network_name" {
-  description = "Name of the network to connect created VMs"
-  type        = string
+variable "networks_names" {
+  description = "Names of the networks to connect created VMs"
+  type        = list(string)
 }

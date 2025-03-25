@@ -1,4 +1,4 @@
-[denvr]
-%{ for index, ip in public_ips ~}
-${ip} index=${index}
+%{ for key, vm in vms ~} 
+[${vm.name}]
+${public_ips[key].address}
 %{ endfor ~}

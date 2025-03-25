@@ -10,12 +10,3 @@
     rule: limit
     port: ssh
     proto: tcp
-
-- name: Firewall allow web ports
-  community.general.ufw:
-    rule: "allow"
-    port: "{{ item }}"
-    proto: "tcp"
-  with_items:
-    - "80"
-    - "443"    

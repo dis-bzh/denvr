@@ -9,9 +9,9 @@
     name: docker
     state: present
 
-- name: Adding user {{ ansible_user }} to docker group 
+- name: Adding user {{ username }} to docker group 
   ansible.builtin.user: 
-    name: '{{ ansible_user }}'
+    name: '{{ username }}'
     groups: docker
     append: yes
 

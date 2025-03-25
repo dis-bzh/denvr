@@ -1,0 +1,68 @@
+services:
+  open-webui:
+    container_name: open-webui
+    image: ghcr.io/open-webui/open-webui:main
+    environment:
+      - MODEL_DOWNLOAD_DIR=/models
+      - OLLAMA_API_BASE_URL=http://ollama:11434
+      - OLLAMA_API_URL=http://ollama:11434
+      - LOG_LEVEL=debug
+      # - WEBUI_SECRET_KEY=your_secret_key_here  # Add this to prevent logouts after updates
+    volumes:
+      - data:/data
+      - models:/models
+      - open-webui:/app/backend/data  # Corrected path based on documentation
+    ports:
+      - "8080:8080"
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+    depends_on:
+      - ollama
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - ollama-net
+    restart: unless-stopped
+    
+  ollama:
+    container_name: ollama
+    image: ollama/ollama:latest
+    environment:
+      - LOG_LEVEL=debug
+    volumes:
+      - ollama:/root/.ollama
+      - models:/models
+    ports:
+      - "11434:11434"
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+    networks:
+      - ollama-net
+    restart: unless-stopped
+    
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 300 open-webui  # Check for updates every 5 minutes
+    depends_on:
+      - open-webui
+    networks:
+      - ollama-net
+    restart: unless-stopped
+    
+volumes:
+  data:
+  models:
+  ollama:
+  open-webui:
+networks:
+  ollama-net:
+    driver: bridge

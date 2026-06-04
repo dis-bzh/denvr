@@ -3,11 +3,13 @@
 # Ansible
 ansible.cfg
 collections/
+ansible/group_vars/all/custom.yml
 
 # Terraform
 terraform/.terraform
 .terraform*
 backend.tfvars
+terraform/terraform.tfvars
 *plan*
 *tfstate*
 

@@ -68,9 +68,10 @@ Configurer des serveurs avec Ansible de manière reproducible.
 
    | Fichier | Actions | Module utilisé |
    |---------|---------|----------------|
-   | `packages.yml` | Update, Docker, fail2ban | `apt` |
+   | `packages.yml` | Update APT, install fail2ban | `apt` |
    | `ufw.yml` | Firewall enable, règles | `community.general.ufw` |
    | `fail2ban.yml` | Start, enable, config | `service`, `copy` |
+   > *Note : Docker est installé via `tasks/docker.yml` (conditionnel sur groupes `app` et `monitoring`).*
 
 ### Partie 3 : Exécuter un playbook local (20 min)
 

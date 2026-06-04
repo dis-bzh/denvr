@@ -1,23 +1,49 @@
 
-prefix = ""
-ssh_public_key = ""
-username = ""
-os_name = ""
-os_version = ""
+# ============================================================
+# CONFIGURATION TERRAFORM — À PERSONNALISER
+# ============================================================
+# Copiez ce fichier et éditez les valeurs :
+#   cp terraform.tfvars.example terraform.tfvars
+#
+# ⚠️ terraform.tfvars est ignoré par git (contient des données sensibles)
+
+# Préfixe unique pour nommer vos ressources (initiales, username…)
+prefix = "<votre-username>"
+
+# Clé SSH publique autorisée sur les VMs (~/.ssh/id_ed25519.pub)
+ssh_public_key = "ssh-ed25519 AAAA_REMPLACER_PAR_VOTRE_CLE_PUBLIQUE user@hostname"
+
+# Utilisateur système créé sur les VMs (utilisé par Ansible)
+username = "ansible"
+
+os_name    = "ubuntu"
+os_version = "24.04"
+
+networks_names = ["internal-network"]
 
 vms = [
     {
-        name = ""
-        cpu_number = ""
-        ram_number = ""
-        disk_size = ""
-        network = ""
+        name       = "bastion"
+        cpu_number = 1
+        ram_number = 1024
+        disk_size  = 20
+        network    = "internal-network"
+        public_ip  = true   # Bastion : IP publique obligatoire (point d'entrée SSH)
     },
     {
-        name = ""
-        cpu_number = ""
-        ram_number = ""
-        disk_size = ""
-        network = ""
+        name       = "app"
+        cpu_number = 1
+        ram_number = 1024
+        disk_size  = 20
+        network    = "internal-network"
+        public_ip  = false  # App : accès uniquement via bastion (ProxyJump)
+    },
+    {
+        name       = "monitoring"
+        cpu_number = 2
+        ram_number = 2048
+        disk_size  = 20
+        network    = "internal-network"
+        public_ip  = false  # Monitoring : accès uniquement via bastion
     }
 ]

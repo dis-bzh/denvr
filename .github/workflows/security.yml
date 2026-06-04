@@ -1,0 +1,81 @@
+name: "🔒 Security — Scans (Snyk, Gitleaks, CodeQL)"
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  security-events: write  # Pour publier les résultats CodeQL (SARIF)
+
+jobs:
+
+  # ── Scan des dépendances Node.js ────────────────────────────
+  snyk:
+    name: Snyk — Dépendances
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout du dépôt
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Installer les dépendances
+        run: npm ci
+        working-directory: my-app
+
+      - name: Scan Snyk
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high --file=my-app/package.json
+        continue-on-error: true  # Ne pas bloquer le pipeline sur les vulnérabilités non critiques
+
+  # ── Scan des secrets dans le code ───────────────────────────
+  gitleaks:
+    name: Gitleaks — Secrets
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout du dépôt
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Historique complet pour scanner tous les commits
+
+      - name: Scan Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ── Analyse statique du code (SAST) ─────────────────────────
+  codeql:
+    name: CodeQL — SAST
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        language: [javascript-typescript]
+
+    steps:
+      - name: Checkout du dépôt
+        uses: actions/checkout@v4
+
+      - name: Initialiser CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Analyser
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"

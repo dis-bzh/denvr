@@ -65,7 +65,7 @@ jobs:
         uses: trstringer/manual-approval@v1
         with:
           secret: ${{ secrets.GITHUB_TOKEN }}
-          approvers: vde-dis
+          approvers: ${{ vars.TF_APPROVER }}
           minimum-approvals: 1
           issue-title: "🏗️ Approval Required — Terraform Apply"
           issue-body: |

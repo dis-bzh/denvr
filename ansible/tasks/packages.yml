@@ -1,21 +1,12 @@
 ---
-# Mise à jour des paquets + installation de Podman et Fail2ban
-#
-# Note : on utilise Podman plutôt que Docker car :
-#   - Podman est rootless par défaut (pas de daemon privilégié)
-#   - Compatible OCI (mêmes images que Docker)
-#   - Plus adapté pour exécuter des containers en production
+# Mise à jour du cache APT et installation des paquets de base.
+# Docker est installé séparément via tasks/docker.yml (groupes app et monitoring).
 
 - name: Mise à jour du cache APT et upgrade des paquets
   ansible.builtin.apt:
     upgrade: safe
     update_cache: true
     cache_valid_time: 3600
-
-- name: Installer Podman (runtime containers rootless)
-  ansible.builtin.apt:
-    name: podman
-    state: present
 
 - name: Installer Fail2ban (protection brute-force)
   ansible.builtin.apt:

@@ -1,0 +1,15 @@
+---
+# ============================================================
+# VARIABLES OBLIGATOIRES — À PERSONNALISER
+# ============================================================
+# Copiez ce fichier et éditez les valeurs :
+#   cp group_vars/all/custom.yml.example group_vars/all/custom.yml
+#
+# ⚠️ custom.yml est ignoré par git (contient des clés SSH)
+# ⚠️ Le playbook échouera si 'users' n'est pas défini.
+
+# === Utilisateurs à créer sur les VMs ===
+# Chaque entrée crée un compte système + déploie sa clé SSH publique.
+users:
+  - name: <votre-username>
+    ssh_key: "ssh-ed25519 AAAA_REMPLACER_PAR_VOTRE_CLE_PUBLIQUE user@hostname"

@@ -76,13 +76,18 @@
     # include_role, les rôles s'exécuteraient AVANT les tasks
     # (c'est l'ordre par défaut d'Ansible, piège classique).
 
+    # ⚠️  En production : passer hardening_enabled=true pour activer ces rôles.
+    #     Par défaut à false pour ne pas bloquer les accès pendant la formation.
+
     - name: Hardening OS (devsec) — sysctl, filesystem, packages, UFW defaults
       ansible.builtin.include_role:
         name: devsec.hardening.os_hardening
+      when: hardening_enabled | default(false) | bool
 
     - name: Hardening SSH (devsec) — sshd_config, ciphers, AllowUsers
       ansible.builtin.include_role:
         name: devsec.hardening.ssh_hardening
+      when: hardening_enabled | default(false) | bool
 
   handlers:
     - name: Restart fail2ban service

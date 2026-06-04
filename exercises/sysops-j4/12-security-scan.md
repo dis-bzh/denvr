@@ -41,7 +41,7 @@ Comprendre l'importance du DevSecOps et scanner les vulnérabilités.
 
 1. **Ouvrir le fichier**
    ```bash
-   cat .github/workflows/snyk.yml
+   cat .github/workflows/security.yml
    ```
 
 2. **Identifier le problème**

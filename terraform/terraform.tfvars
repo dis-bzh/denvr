@@ -1,7 +1,7 @@
 
 prefix = "vde"
 ssh_public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPeFbFAXm1hKy++2RAV0RtCbHIX5y0WlYSKKxv+cFNwC vde@TUF-0126"
-username = "vde"
+username = "ansible"
 os_name = "ubuntu"
 os_version = "24.04"
 
@@ -30,6 +30,6 @@ vms = [
         ram_number = 2048
         disk_size = 20
         network = "internal-network"
-        public_ip = false
+        public_ip = true
     }
 ]

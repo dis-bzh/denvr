@@ -37,5 +37,10 @@ ssh_banner: false
 # ALORS ssh_allow_users = ['alice', 'bob']
 ssh_allow_users: "{{ users | default([]) | map(attribute='name') | list }}"
 
+# === Hardening (devsec) ===
+# false par défaut : permet d'accéder aux VMs pendant la formation.
+# Passer à true en production ou via --extra-vars "hardening_enabled=true".
+hardening_enabled: false
+
 # VARIABLE OBLIGATOIRE MANQUANTE :
 #   - users

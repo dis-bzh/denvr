@@ -34,3 +34,12 @@ resource "warren_floating_ip" "denvr_ip" {
   name        = "ip-${var.prefix}-${each.value.name}"
   assigned_to = resource.warren_virtual_machine.denvr_vms[each.key].id
 }
+
+# Génération de l'inventaire Ansible à partir des outputs Terraform
+resource "local_file" "ansible_inventory" {
+  content = templatefile("${path.module}/inventory.tmpl", {
+    vms        = resource.warren_virtual_machine.denvr_vms
+    public_ips = resource.warren_floating_ip.denvr_ip
+  })
+  filename = "${path.module}/inventory"
+}

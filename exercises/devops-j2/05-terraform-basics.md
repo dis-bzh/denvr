@@ -46,11 +46,12 @@ Découvrir l'Infrastructure as Code (IaC) avec Terraform.
 
    | Fichier | Contenu |
    |---------|---------|
-   | `provider.tf` | Configuration du provider cloud |
-   | `variables.tf` | Variables d'entrée |
-   | `main.tf` | Ressources à créer |
-   | `output.tf` | Valeurs de sortie |
-   | `*.tfvars.example` | Exemples de variables |
+   | `provider.tf` | Configuration du provider Warren (Denv-r) |
+   | `variables.tf` | Déclaration des variables d'entrée |
+   | `main.tf` | Ressources à créer (réseau, VMs, IPs, inventory Ansible) |
+   | `output.tf` | Valeurs de sortie (VMs, IPs publiques) |
+   | `backend.tfvars.example` | Exemple config backend S3 (state distant) |
+   | `terraform.tfvars.example` | Exemple variables d'infrastructure (prefix, VMs, clé SSH) |
 
 3. **Analyser `main.tf`**
    ```bash

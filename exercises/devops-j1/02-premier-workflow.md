@@ -15,7 +15,7 @@ Comprendre le pipeline CI/CD du projet et créer un workflow simple.
 
 ### Partie 1 : Vue d'ensemble du pipeline (15 min)
 
-Le projet utilise **3 workflows** qui forment un pipeline DevSecOps complet :
+Le projet utilise **5 workflows** qui forment un pipeline DevSecOps complet :
 
 ```
                     ┌─────────────────────────────────────────────┐
@@ -25,22 +25,31 @@ Le projet utilise **3 workflows** qui forment un pipeline DevSecOps complet :
                     └─────────────────────────────────────────────┘
 
                     ┌─────────────────────────────────────────────┐
-  push tag          │            build.yml                        │
+  push tag v*       │            build.yml                        │
   ──────────────────│  Docker Build → Push GHCR → Trivy Scan      │
                     └──────────────────┬──────────────────────────┘
-                                       │ workflow_run (si succès)
+                                       │ déclenche (workflow_dispatch)
                     ┌──────────────────▼──────────────────────────┐
-                    │            deploy.yml                       │
-                    │  check-changes → Terraform? → ✋ Approval    │
-                    │  → Terraform Apply → ✋ Approval → Ansible   │
+                    │            deploy-app.yml                   │
+                    │  Ansible → Docker Compose sur les VMs [app] │
+                    └─────────────────────────────────────────────┘
+
+                    ┌─────────────────────────────────────────────┐
+  Manuel            │         deploy-infra.yml                    │
+  ──────────────────│  Terraform plan → ✋ Approbation → apply     │
+                    └─────────────────────────────────────────────┘
+
+                    ┌─────────────────────────────────────────────┐
+  Manuel            │         deploy-config.yml                   │
+  ──────────────────│  Ansible → Hardening & configuration VMs    │
                     └─────────────────────────────────────────────┘
 ```
 
 **Observez :**
 - La sécurité est scannée sur **chaque push** (détection précoce)
-- Le build ne se fait que pour les **tags** (releases)
-- Le déploiement attend que le **build réussisse** (`workflow_run`)
-- Il y a des **approbations manuelles** avant de toucher à l'infra et au déploiement
+- Le build ne se fait que pour les **tags** (releases versionnées)
+- L'infra et la config applicative sont **séparées** : on peut redéployer l'app sans retoucher l'infra
+- Il y a une **approbation manuelle** avant d'appliquer Terraform (éviter les accidents)
 
 ---
 
@@ -116,63 +125,67 @@ version (extraction du tag) → docker (build + push + scan)
 
 ---
 
-#### 2.3 — `deploy.yml` : Infrastructure + Déploiement applicatif
+#### 2.3 — `deploy-infra.yml` : Infrastructure (Terraform)
 
 ```bash
-cat .github/workflows/deploy.yml
+cat .github/workflows/deploy-infra.yml
 ```
 
-C'est le workflow le plus complexe. Il orchestre **6 jobs** :
+Ce workflow gère **uniquement l'infrastructure** de manière manuelle (`workflow_dispatch`) :
 
 ```
-version ──► check-changes ──► terraform-plan ──► ✋ approval-tf ──► terraform-apply ──┐
-                  │                                                                    │
-                  │ (si pas de changement terraform/)                                  │
-                  └──────────────────────────────────────────────────► ✋ approval-ans ─► ansible
+terraform-plan ──► ✋ Approbation manuelle ──► terraform-apply ──► Upload inventory
 ```
 
-**Le concept clé : Terraform conditionnel**
-
-Le job `check-changes` vérifie si des fichiers dans `terraform/` ont changé :
-- **Oui** → Terraform plan → approbation → apply → Ansible
-- **Non** → Skip de Terraform → directement Ansible (avec approbation)
-
-Cela évite de refaire un `terraform plan + apply` quand seul le code applicatif a changé.
-
-**Détail des jobs :**
+**Jobs :**
 
 | Job | Rôle | Dépend de |
 |-----|------|-----------|
-| `version` | Extrait le tag Git + vérifie que le build a réussi | — |
-| `check-changes` | Détecte si `terraform/` a changé | `version` |
-| `terraform-plan` | `terraform init` + `plan` → sauvegarde en artefact | `check-changes` (si changements) |
-| `manual-approval-tf` | Crée une issue GitHub pour approbation humaine | `terraform-plan` |
-| `terraform-apply` | Applique le plan, génère l'inventaire Ansible | `manual-approval-tf` |
-| `manual-approval-ansible` | Approbation avant déploiement | `terraform-apply` (ou skip si pas de changement TF) |
-| `ansible` | Déploie l'application via SSH | `manual-approval-ansible` + `version` |
+| `terraform-plan` | `terraform init` + `plan` → artefact | — |
+| `manual-approval` | Issue GitHub pour approbation humaine | `terraform-plan` |
+| `terraform-apply` | Applique le plan, génère l'inventaire Ansible | `manual-approval` |
 
 > [!CAUTION]
-> **Ce workflow nécessite le plus de configuration.** Voici tout ce qu'il faut paramétrer :
->
+> **Secrets/Variables requis :**
 > | Type | Nom | Usage |
 > |------|-----|-------|
 > | Secret | `S3_ACCESS_KEY_ID` | Backend S3 pour le state Terraform |
 > | Secret | `S3_SECRET_ACCESS_KEY` | Backend S3 pour le state Terraform |
 > | Secret | `API_TOKEN` | Token API du provider cloud (Denv-r) |
-> | Secret | `SSH_PRIVATE_KEY` | Clé SSH pour Ansible |
-> | Secret | `ANSIBLE_USER` | Utilisateur SSH sur les VMs |
 > | Variable | `S3_BUCKET` | Nom du bucket S3 |
 > | Variable | `S3_KEY` | Chemin du fichier state dans le bucket |
 > | Variable | `S3_REGION` | Région du bucket S3 |
 > | Variable | `S3_ENDPOINT_URL` | Endpoint S3 (Denv-r, OVH, Scaleway…) |
+> | Variable | `TF_APPROVER` | GitHub username autorisé à approuver |
 
-> [!WARNING]
-> **Erreurs fréquentes sur ce workflow :**
-> - Les secrets S3 ne sont pas configurés → `terraform init` échoue
-> - La `SSH_PRIVATE_KEY` est mal formatée (les retours à la ligne dans les secrets GitHub sont fragiles)
-> - Le security group de la VM ne permet pas le SSH (port 22) depuis les runners GitHub Actions
-> - Le fichier `ansible/playbook.yml` n'existe pas dans le repo
-> - Le fichier `terraform/backend.tfvars.example` est absent → `envsubst` échoue
+#### 2.4 — `deploy-config.yml` : Configuration VMs (Ansible)
+
+```bash
+cat .github/workflows/deploy-config.yml
+```
+
+Déploie la configuration (hardening, firewall, utilisateurs) — **manuel** :
+
+```
+configure (ansible-playbook playbook.yml)
+```
+
+> Secrets requis : `SSH_PRIVATE_KEY`, `ANSIBLE_USER`
+
+#### 2.5 — `deploy-app.yml` : Déploiement applicatif (Ansible + Docker Compose)
+
+```bash
+cat .github/workflows/deploy-app.yml
+```
+
+Déploie l'application (LLM Shield via Docker Compose) — **manuel ou déclenché par build.yml** :
+
+```
+deploy (ansible-playbook deploy-app.yml)
+```
+
+> Secrets : `SSH_PRIVATE_KEY`, `ANSIBLE_USER`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY` (optionnels)
+> Variables : `DOMAIN_NAME`, `LETSENCRYPT_EMAIL`
 
 ---
 
@@ -254,9 +267,9 @@ Cela évite de refaire un `terraform plan + apply` quand seul le code applicatif
 | **Scan secrets** | security.yml | Gitleaks |
 | **SAST** | security.yml | CodeQL |
 | **Scan images** | build.yml | Trivy |
-| **Manual approval** | deploy.yml | Avant déploiement |
-| **Condition de succès** | deploy.yml | Ne déploie pas après un build échoué |
-| **Terraform conditionnel** | deploy.yml | Skip si pas de changement infra |
+| **Manual approval** | deploy-infra.yml | Avant Terraform apply |
+| **Condition de succès** | build.yml → deploy-app.yml | Ne déploie pas après un build échoué |
+| **Infra et app séparés** | deploy-infra.yml + deploy-app.yml | Redéploiement app sans retoucher l'infra |
 
 ### À explorer (nice-to-have)
 
@@ -280,7 +293,7 @@ Cela évite de refaire un `terraform plan + apply` quand seul le code applicatif
 - [ ] Votre workflow `hello.yml` s'exécute (si vous avez pushé)
 - [ ] Vous comprenez la différence entre `uses:` et `run:`
 - [ ] Vous savez pourquoi les `permissions:` sont importantes
-- [ ] Vous pouvez expliquer pourquoi Terraform est conditionnel dans `deploy.yml`
+- [ ] Vous pouvez expliquer pourquoi Terraform et l'app sont dans des workflows séparés
 
 ---
 
@@ -308,20 +321,32 @@ Cela évite de refaire un `terraform plan + apply` quand seul le code applicatif
 **build.yml :**
 | Question | Réponse |
 |----------|---------|
-| Déclencheur | Push d'un tag (`tags: '*'`) |
+| Déclencheur | Push d'un tag (`tags: 'v*'`) |
 | Permissions | `contents: read`, `packages: write` |
 | Registry | `ghcr.io` (GitHub Container Registry) |
-| Scan image | Trivy (`aquasecurity/trivy-action`) |
-| Cache | GitHub Actions cache (`type=gha`) |
+| Scan image | Trivy (`aquasecurity/trivy-action`) — SARIF upload |
+| Déclenchement | Lance `deploy-app.yml` via `workflow_dispatch` |
 
-**deploy.yml :**
+**deploy-infra.yml :**
 | Question | Réponse |
 |----------|---------|
-| Déclencheur | `workflow_run` (après build.yml) + `workflow_dispatch` |
-| Condition de succès | Vérifie `workflow_run.conclusion == 'success'` |
-| Terraform conditionnel | Job `check-changes` détecte les changements dans `terraform/` |
-| Approbation manuelle | 2 étapes : avant Terraform Apply et avant Ansible |
-| Outils installés | Terraform 1.10.5, Ansible (via apt) |
+| Déclencheur | Manuel (`workflow_dispatch`) |
+| Terraform | `init` → `plan` → approval → `apply` |
+| Approbation | Issue GitHub via `trstringer/manual-approval` |
+| Output | Génère `inventory` (pour Ansible) → upload artifact |
+
+**deploy-config.yml :**
+| Question | Réponse |
+|----------|---------|
+| Déclencheur | Manuel (`workflow_dispatch`) |
+| Ansible | Playbook `playbook.yml` (hardening, UFW, fail2ban, users) |
+
+**deploy-app.yml :**
+| Question | Réponse |
+|----------|---------|
+| Déclencheur | Manuel (`workflow_dispatch`) ou après `build.yml` |
+| Ansible | Playbook `deploy-app.yml` (Docker Compose LLM Shield) |
+| Vars | `image_tag`, `domain_name`, `letsencrypt_email`, API keys (optionnelles) |
 
 </details>
 

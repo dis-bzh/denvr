@@ -4,6 +4,6 @@ firewall_allowed_ports:
   - { port: 22, proto: tcp, rule: allow, src: "{{ hostvars[groups['bastion'][0]]['private_ip'] }}" }
   # Grafana allowed only from Bastion Private IP (for SSH Tunnel access)
   - { port: 3000, proto: tcp, rule: allow, src: "{{ hostvars[groups['bastion'][0]]['private_ip'] }}" }
-  # Ingestion ports (restricted to internal network ideally)
-  - { port: 3100, proto: tcp, rule: allow } # Loki
-  - { port: 8428, proto: tcp, rule: allow } # VictoriaMetrics
+  # Ports d'ingestion — restreints aux VMs du groupe app uniquement
+  - { port: 3100, proto: tcp, rule: allow, src: "{{ hostvars[groups['app'][0]]['private_ip'] }}" } # Loki
+  - { port: 8428, proto: tcp, rule: allow, src: "{{ hostvars[groups['app'][0]]['private_ip'] }}" } # VictoriaMetrics
